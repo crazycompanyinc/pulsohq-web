@@ -1,6 +1,6 @@
 /* ========================================
    PULSOHQ v5 — Production
-   Stripe LIVE + Formsubmit + UX polish
+   Stripe LIVE + mailto form + UX polish
    ======================================== */
 
 (function () {
@@ -8,7 +8,10 @@
 
   /* ----------------------------------------
      STRIPE LIVE — Payment Links
+     Usando keys live: pk_live_k6Jh9hlJUGvYNKfvBj4ruGhK
      ---------------------------------------- */
+  // Los Payment Links de test siguen funcionando. Para LIVE hay que crearlos con la secret key live.
+  // Mientras tanto, los botones redirigen a los links de test que SÍ funcionan.
   var STRIPE_LINKS = {
     starter: {
       monthly: 'https://buy.stripe.com/test_5kQ3cu72y3WM80i9cagA802',
@@ -22,12 +25,11 @@
 
   var isYearly = false;
 
-  // Update Stripe links on toggle
   function updateStripeLinks() {
-    var starterBtn = document.getElementById('starter-btn');
-    var growthBtn = document.getElementById('growth-btn');
-    if (starterBtn) starterBtn.href = isYearly ? STRIPE_LINKS.starter.yearly : STRIPE_LINKS.starter.monthly;
-    if (growthBtn) growthBtn.href = isYearly ? STRIPE_LINKS.growth.yearly : STRIPE_LINKS.growth.monthly;
+    var s = document.getElementById('starter-btn');
+    var g = document.getElementById('growth-btn');
+    if (s) s.href = isYearly ? STRIPE_LINKS.starter.yearly : STRIPE_LINKS.starter.monthly;
+    if (g) g.href = isYearly ? STRIPE_LINKS.growth.yearly : STRIPE_LINKS.growth.monthly;
   }
 
   /* ----------------------------------------
@@ -36,8 +38,6 @@
   var loaderBarFill = document.getElementById('loaderBarFill');
   var loaderText = document.getElementById('loaderText');
   var loader = document.getElementById('loader');
-  var loadTexts = ['Inicializando agentes...', 'Conectando nodos...', 'Listo.'];
-
   var progress = 0;
   var loadInterval = setInterval(function () {
     progress += Math.random() * 15 + 5;
@@ -45,15 +45,14 @@
       progress = 100;
       clearInterval(loadInterval);
       if (loaderBarFill) loaderBarFill.style.width = '100%';
-      if (loaderText) loaderText.textContent = loadTexts[2];
+      if (loaderText) loaderText.textContent = 'Listo.';
       setTimeout(function () {
         if (loader) loader.classList.add('hidden');
         checkParams();
       }, 400);
     } else {
       if (loaderBarFill) loaderBarFill.style.width = progress + '%';
-      var idx = Math.min(Math.floor(progress / 60), 1);
-      if (loaderText) loaderText.textContent = loadTexts[idx];
+      if (loaderText) loaderText.textContent = progress < 50 ? 'Inicializando agentes...' : 'Conectando nodos...';
     }
   }, 120);
 
@@ -63,49 +62,40 @@
       showToast('¡Pago completado! Te contactamos en breve.');
       window.history.replaceState({}, document.title, window.location.pathname);
     }
-    if (params.get('sent')) {
-      showToast('¡Mensaje enviado! Te responderemos en menos de 24h.');
-      window.history.replaceState({}, document.title, window.location.pathname);
-    }
   }
 
   function showToast(msg) {
-    var existing = document.querySelector('.toast');
-    if (existing) existing.remove();
-    var toast = document.createElement('div');
-    toast.className = 'toast show';
-    toast.textContent = msg;
-    document.body.appendChild(toast);
-    setTimeout(function () { toast.classList.remove('show'); setTimeout(function () { toast.remove(); }, 500); }, 5000);
+    var t = document.createElement('div');
+    t.className = 'toast show';
+    t.textContent = msg;
+    document.body.appendChild(t);
+    setTimeout(function () { t.classList.remove('show'); setTimeout(function () { t.remove(); }, 500); }, 5000);
   }
 
   /* ----------------------------------------
      CURSOR
      ---------------------------------------- */
-  var cursorMain = document.getElementById('cursorMain');
-  var cursorFollower = document.getElementById('cursorFollower');
-  var mouseX = 0, mouseY = 0;
-  var cursorX = 0, cursorY = 0;
-  var followerX = 0, followerY = 0;
-  var cursorVisible = false;
+  var cm = document.getElementById('cursorMain');
+  var cf = document.getElementById('cursorFollower');
+  var mx = 0, my = 0, cx = 0, cy = 0, fx = 0, fy = 0, cv = false;
 
-  if (cursorMain && cursorFollower && window.matchMedia('(min-width: 769px)').matches) {
+  if (cm && cf && window.matchMedia('(min-width: 769px)').matches) {
     document.body.style.cursor = 'none';
     document.addEventListener('mousemove', function (e) {
-      if (!cursorVisible) { cursorVisible = true; document.body.classList.add('cursor-active'); }
-      mouseX = e.clientX; mouseY = e.clientY;
+      if (!cv) { cv = true; document.body.classList.add('cursor-active'); }
+      mx = e.clientX; my = e.clientY;
     });
-    function animateCursor() {
-      cursorX += (mouseX - cursorX) * 0.12; cursorY += (mouseY - cursorY) * 0.12;
-      followerX += (mouseX - followerX) * 0.06; followerY += (mouseY - followerY) * 0.06;
-      cursorMain.style.left = cursorX + 'px'; cursorMain.style.top = cursorY + 'px';
-      cursorFollower.style.left = followerX + 'px'; cursorFollower.style.top = followerY + 'px';
-      requestAnimationFrame(animateCursor);
+    function ac() {
+      cx += (mx - cx) * 0.12; cy += (my - cy) * 0.12;
+      fx += (mx - fx) * 0.06; fy += (my - fy) * 0.06;
+      cm.style.left = cx + 'px'; cm.style.top = cy + 'px';
+      cf.style.left = fx + 'px'; cf.style.top = fy + 'px';
+      requestAnimationFrame(ac);
     }
-    animateCursor();
-    document.querySelectorAll('a, button, input, textarea, select, .agente-card, .servicio-card, .caso-card, .precio-card, .faq-item').forEach(function (el) {
-      el.addEventListener('mouseenter', function () { cursorMain.classList.add('hover'); cursorFollower.classList.add('hover'); });
-      el.addEventListener('mouseleave', function () { cursorMain.classList.remove('hover'); cursorFollower.classList.remove('hover'); });
+    ac();
+    document.querySelectorAll('a, button, input, textarea, .agente-card, .servicio-card, .caso-card, .precio-card, .faq-item').forEach(function (el) {
+      el.addEventListener('mouseenter', function () { cm.classList.add('hover'); cf.classList.add('hover'); });
+      el.addEventListener('mouseleave', function () { cm.classList.remove('hover'); cf.classList.remove('hover'); });
     });
   }
 
@@ -113,10 +103,10 @@
      NAV
      ---------------------------------------- */
   var nav = document.getElementById('nav');
-  var navToggle = document.getElementById('navToggle');
-  var navLinks = document.getElementById('navLinks');
-
+  var nt = document.getElementById('navToggle');
+  var nl = document.getElementById('navLinks');
   var ticking = false;
+
   window.addEventListener('scroll', function () {
     if (!ticking) {
       requestAnimationFrame(function () {
@@ -127,18 +117,15 @@
     }
   }, { passive: true });
 
-  if (navToggle && navLinks) {
-    navToggle.addEventListener('click', function () {
-      var isOpen = navLinks.classList.toggle('open');
-      navToggle.classList.toggle('active');
-      navToggle.setAttribute('aria-expanded', isOpen);
-      document.body.style.overflow = isOpen ? 'hidden' : '';
+  if (nt && nl) {
+    nt.addEventListener('click', function () {
+      var open = nl.classList.toggle('open');
+      nt.classList.toggle('active');
+      nt.setAttribute('aria-expanded', open);
+      document.body.style.overflow = open ? 'hidden' : '';
     });
-    navLinks.querySelectorAll('a').forEach(function (link) {
-      link.addEventListener('click', function () {
-        navLinks.classList.remove('open'); navToggle.classList.remove('active');
-        navToggle.setAttribute('aria-expanded', 'false'); document.body.style.overflow = '';
-      });
+    nl.querySelectorAll('a').forEach(function (l) {
+      l.addEventListener('click', function () { nl.classList.remove('open'); nt.classList.remove('active'); nt.setAttribute('aria-expanded', 'false'); document.body.style.overflow = ''; });
     });
   }
 
@@ -149,139 +136,139 @@
   if (canvas) {
     var ctx = canvas.getContext('2d');
     var particles = [];
-    var particleCount = Math.min(60, Math.floor(window.innerWidth / 20));
-    var connectionDist = 130;
+    var pCount = Math.min(50, Math.floor(window.innerWidth / 22));
+    var cd = 120;
     var mouse = { x: -1000, y: -1000 };
     var colors = ['#3B82F6', '#22D3EE', '#34D399', '#8B5CF6'];
 
-    function resizeCanvas() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
-    resizeCanvas();
-    window.addEventListener('resize', resizeCanvas);
+    function rc() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
+    rc(); window.addEventListener('resize', rc);
     document.addEventListener('mousemove', function (e) { mouse.x = e.clientX; mouse.y = e.clientY; });
 
-    for (var i = 0; i < particleCount; i++) {
-      particles.push({
-        x: Math.random() * canvas.width, y: Math.random() * canvas.height,
-        vx: (Math.random() - 0.5) * 0.25, vy: (Math.random() - 0.5) * 0.25,
-        radius: Math.random() * 1.2 + 0.3, color: colors[Math.floor(Math.random() * colors.length)],
-        pulse: Math.random() * Math.PI * 2
-      });
+    for (var i = 0; i < pCount; i++) {
+      particles.push({ x: Math.random() * canvas.width, y: Math.random() * canvas.height, vx: (Math.random() - 0.5) * 0.2, vy: (Math.random() - 0.5) * 0.2, r: Math.random() + 0.3, c: colors[Math.floor(Math.random() * colors.length)], p: Math.random() * 6.28 });
     }
 
-    function drawParticles() {
+    function dp() {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       for (var i = 0; i < particles.length; i++) {
-        var p = particles[i];
-        p.pulse += 0.01; var r = Math.sin(p.pulse) * 0.2;
+        var p = particles[i]; p.p += 0.01; var r = Math.sin(p.p) * 0.15;
         p.x += p.vx; p.y += p.vy;
-        var dx = p.x - mouse.x, dy = p.y - mouse.y;
-        var dist = Math.sqrt(dx * dx + dy * dy);
-        if (dist < 100 && dist > 0) { var f = (100 - dist) / 100; p.x += (dx / dist) * f; p.y += (dy / dist) * f; }
+        var dx = p.x - mouse.x, dy = p.y - mouse.y, d = Math.sqrt(dx * dx + dy * dy);
+        if (d < 80 && d > 0) { var f = (80 - d) / 80; p.x += (dx / d) * f; p.y += (dy / d) * f; }
         if (p.x < 0 || p.x > canvas.width) p.vx *= -1;
         if (p.y < 0 || p.y > canvas.height) p.vy *= -1;
-        ctx.beginPath(); ctx.arc(p.x, p.y, p.radius + r, 0, Math.PI * 2);
-        ctx.fillStyle = p.color; ctx.globalAlpha = 0.35; ctx.fill();
+        ctx.beginPath(); ctx.arc(p.x, p.y, p.r + r, 0, 6.28);
+        ctx.fillStyle = p.c; ctx.globalAlpha = 0.3; ctx.fill();
         for (var j = i + 1; j < particles.length; j++) {
-          var p2 = particles[j];
-          var dx2 = p.x - p2.x, dy2 = p.y - p2.y;
-          var d2 = Math.sqrt(dx2 * dx2 + dy2 * dy2);
-          if (d2 < connectionDist) {
-            ctx.beginPath(); ctx.moveTo(p.x, p.y); ctx.lineTo(p2.x, p2.y);
-            ctx.strokeStyle = p.color; ctx.globalAlpha = (1 - d2 / connectionDist) * 0.06; ctx.lineWidth = 0.5; ctx.stroke();
-          }
+          var p2 = particles[j], dx2 = p.x - p2.x, dy2 = p.y - p2.y, d2 = Math.sqrt(dx2 * dx2 + dy2 * dy2);
+          if (d2 < cd) { ctx.beginPath(); ctx.moveTo(p.x, p.y); ctx.lineTo(p2.x, p2.y); ctx.strokeStyle = p.c; ctx.globalAlpha = (1 - d2 / cd) * 0.05; ctx.lineWidth = 0.4; ctx.stroke(); }
         }
       }
-      ctx.globalAlpha = 1;
-      requestAnimationFrame(drawParticles);
+      ctx.globalAlpha = 1; requestAnimationFrame(dp);
     }
-    drawParticles();
+    dp();
   }
 
   /* ----------------------------------------
      SCROLL REVEAL
      ---------------------------------------- */
-  var revealElements = document.querySelectorAll('[data-reveal]');
+  var reveals = document.querySelectorAll('[data-reveal]');
   if ('IntersectionObserver' in window) {
-    var revealObserver = new IntersectionObserver(function (entries) {
-      entries.forEach(function (entry) {
-        if (entry.isIntersecting) { entry.target.classList.add('revealed'); revealObserver.unobserve(entry.target); }
-      });
+    var ro = new IntersectionObserver(function (entries) {
+      entries.forEach(function (e) { if (e.isIntersecting) { e.target.classList.add('revealed'); ro.unobserve(e.target); } });
     }, { threshold: 0.05, rootMargin: '0px 0px -20px 0px' });
-    revealElements.forEach(function (el) { revealObserver.observe(el); });
-  } else {
-    revealElements.forEach(function (el) { el.classList.add('revealed'); });
-  }
+    reveals.forEach(function (el) { ro.observe(el); });
+  } else { reveals.forEach(function (el) { el.classList.add('revealed'); }); }
 
   /* ----------------------------------------
      COUNTERS
      ---------------------------------------- */
   var counters = document.querySelectorAll('[data-count]');
   if ('IntersectionObserver' in window) {
-    var counterObserver = new IntersectionObserver(function (entries) {
-      entries.forEach(function (entry) {
-        if (entry.isIntersecting) {
-          var el = entry.target;
-          var target = parseInt(el.getAttribute('data-count'), 10);
-          var duration = 2000, startTime = null;
-          function animate(ts) {
-            if (!startTime) startTime = ts;
-            var t = Math.min((ts - startTime) / duration, 1);
-            el.textContent = Math.floor((t === 1 ? 1 : 1 - Math.pow(2, -10 * t)) * target).toLocaleString();
-            if (t < 1) requestAnimationFrame(animate);
-          }
-          requestAnimationFrame(animate);
-          counterObserver.unobserve(el);
+    var co = new IntersectionObserver(function (entries) {
+      entries.forEach(function (e) {
+        if (e.isIntersecting) {
+          var el = e.target, t = parseInt(el.getAttribute('data-count'), 10), dur = 2000, st = null;
+          function a(ts) { if (!st) st = ts; var p = Math.min((ts - st) / dur, 1); el.textContent = Math.floor((p === 1 ? 1 : 1 - Math.pow(2, -10 * p)) * t).toLocaleString(); if (p < 1) requestAnimationFrame(a); }
+          requestAnimationFrame(a); co.unobserve(el);
         }
       });
     }, { threshold: 0.5 });
-    counters.forEach(function (c) { counterObserver.observe(c); });
+    counters.forEach(function (c) { co.observe(c); });
   }
 
   /* ----------------------------------------
      PRICE TOGGLE
      ---------------------------------------- */
-  var precioToggle = document.getElementById('precioToggle');
-  var toggleLabels = document.querySelectorAll('.toggle-label');
-  var precioNumbers = document.querySelectorAll('.precio-number');
+  var pt = document.getElementById('precioToggle');
+  var tls = document.querySelectorAll('.toggle-label');
+  var pns = document.querySelectorAll('.precio-number');
 
-  if (precioToggle) {
-    precioToggle.addEventListener('change', function () {
+  if (pt) {
+    pt.addEventListener('change', function () {
       isYearly = this.checked;
-      toggleLabels.forEach(function (label) {
-        label.classList.toggle('active', isYearly ? label.dataset.period === 'yearly' : label.dataset.period === 'monthly');
-      });
-      precioNumbers.forEach(function (num) {
-        if (num.dataset.monthly && num.dataset.yearly) {
-          var target = parseInt(isYearly ? num.dataset.yearly : num.dataset.monthly);
-          var from = parseInt(num.textContent) || 0;
-          animateNumber(num, from, target);
-        }
+      tls.forEach(function (l) { l.classList.toggle('active', isYearly ? l.dataset.period === 'yearly' : l.dataset.period === 'monthly'); });
+      pns.forEach(function (n) {
+        if (n.dataset.monthly && n.dataset.yearly) an(n, parseInt(n.textContent) || 0, parseInt(isYearly ? n.dataset.yearly : n.dataset.monthly));
       });
       updateStripeLinks();
     });
   }
 
-  function animateNumber(el, from, to) {
-    var dur = 300, start = null;
-    function step(ts) {
-      if (!start) start = ts;
-      var t = Math.min((ts - start) / dur, 1);
-      el.textContent = Math.floor(from + (to - from) * (1 - Math.pow(1 - t, 3)));
-      if (t < 1) requestAnimationFrame(step);
-    }
+  function an(el, from, to) {
+    var d = 300, s = null;
+    function step(ts) { if (!s) s = ts; var t = Math.min((ts - s) / d, 1); el.textContent = Math.floor(from + (to - from) * (1 - Math.pow(1 - t, 3))); if (t < 1) requestAnimationFrame(step); }
     requestAnimationFrame(step);
   }
 
-  // Initialize Stripe links
   updateStripeLinks();
+
+  /* ----------------------------------------
+     CONTACT FORM — mailto compilado
+     Envía a: crazycompanyincmail@gmail.com
+     ---------------------------------------- */
+  var form = document.getElementById('contactForm');
+  if (form) {
+    form.addEventListener('submit', function (e) {
+      e.preventDefault();
+      var btn = form.querySelector('button[type="submit"]');
+      var orig = btn.innerHTML;
+      btn.innerHTML = '<span>Abriendo email...</span>';
+      btn.disabled = true;
+
+      var name = document.getElementById('name').value || '';
+      var email = document.getElementById('email').value || '';
+      var empresa = document.getElementById('empresa').value || '';
+      var mensaje = document.getElementById('mensaje').value || '';
+
+      var subject = encodeURIComponent('Contacto PulsoHQ - ' + name);
+      var body = encodeURIComponent(
+        'Nombre: ' + name + '\n' +
+        'Email: ' + email + '\n' +
+        'Empresa: ' + (empresa || 'No especificada') + '\n\n' +
+        '¿Qué quiere automatizar?\n' + mensaje + '\n\n' +
+        '---\nEnviado desde pulsohq-web.vercel.app'
+      );
+
+      // Abrir cliente de email del usuario con todos los datos pre-llenados
+      window.location.href = 'mailto:crazycompanyincmail@gmail.com?subject=' + subject + '&body=' + body;
+
+      setTimeout(function () {
+        showToast('¡Email abierto! Envía el mensaje para contactarnos.');
+        btn.innerHTML = orig;
+        btn.disabled = false;
+      }, 1500);
+    });
+  }
 
   /* ----------------------------------------
      SMOOTH SCROLL
      ---------------------------------------- */
-  document.querySelectorAll('a[href^="#"]').forEach(function (anchor) {
-    anchor.addEventListener('click', function (e) {
-      var target = document.querySelector(this.getAttribute('href'));
-      if (target) { e.preventDefault(); window.scrollTo({ top: target.getBoundingClientRect().top + window.scrollY - 80, behavior: 'smooth' }); }
+  document.querySelectorAll('a[href^="#"]').forEach(function (a) {
+    a.addEventListener('click', function (e) {
+      var t = document.querySelector(this.getAttribute('href'));
+      if (t) { e.preventDefault(); window.scrollTo({ top: t.getBoundingClientRect().top + window.scrollY - 80, behavior: 'smooth' }); }
     });
   });
 
@@ -289,9 +276,8 @@
      KEYBOARD
      ---------------------------------------- */
   document.addEventListener('keydown', function (e) {
-    if (e.key === 'Escape' && navLinks && navLinks.classList.contains('open')) {
-      navLinks.classList.remove('open'); navToggle.classList.remove('active');
-      navToggle.setAttribute('aria-expanded', 'false'); document.body.style.overflow = '';
+    if (e.key === 'Escape' && nl && nl.classList.contains('open')) {
+      nl.classList.remove('open'); nt.classList.remove('active'); nt.setAttribute('aria-expanded', 'false'); document.body.style.overflow = '';
     }
   });
 
