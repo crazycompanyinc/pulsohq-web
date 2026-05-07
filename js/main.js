@@ -9,7 +9,7 @@
   /* ----------------------------------------
      CONFIG
      ---------------------------------------- */
-  var STRIPE_PUBLIC_KEY = 'pk_live_YOUR_STRIPE_PUBLIC_KEY'; // Replace with actual key
+  var STRIPE_PUBLIC_KEY = 'pk_test_k6Jh9hlJUGvYNKfvBj4ruGhK';
   var STRIPE_PRICES = {
     starter: { monthly: 'price_starter_monthly', yearly: 'price_starter_yearly' },
     growth: { monthly: 'price_growth_monthly', yearly: 'price_growth_yearly' }
