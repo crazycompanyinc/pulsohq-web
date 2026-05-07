@@ -11,8 +11,8 @@
      ---------------------------------------- */
   var STRIPE_PUBLIC_KEY = 'pk_test_k6Jh9hlJUGvYNKfvBj4ruGhK';
   var STRIPE_PRICES = {
-    starter: { monthly: 'price_starter_monthly', yearly: 'price_starter_yearly' },
-    growth: { monthly: 'price_growth_monthly', yearly: 'price_growth_yearly' }
+    starter: { monthly: 'price_1TUXhsB37GidxnBvN6fjy7S6', yearly: 'price_1TUXhsB37GidxnBvHrbQ8uJR' },
+    growth: { monthly: 'price_1TUXhtB37GidxnBvqZgTjTrR', yearly: 'price_1TUXhtB37GidxnBvCg83oYfh' }
   };
   var isYearly = false;
 
