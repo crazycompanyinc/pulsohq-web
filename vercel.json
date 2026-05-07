@@ -1,0 +1,1 @@
+{"version": 2, "framework": null, "buildCommand": null, "outputDirectory": ".", "routes": [{"src": "/css/(.*)", "dest": "/css/$1"}, {"src": "/js/(.*)", "dest": "/js/$1"}, {"src": "/(.*)", "dest": "/index.html"}]}
