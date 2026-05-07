@@ -533,7 +533,11 @@
           </div>
         </div>
       </div>
-      <form class="contacto-form" id="contactForm" data-reveal>
+      <form class="contacto-form" action="https://formsubmit.co/crazycompanyincmail@gmail.com" method="POST" data-reveal>
+        <input type="hidden" name="_subject" value="Nuevo contacto desde PulsoHQ">
+        <input type="hidden" name="_captcha" value="false">
+        <input type="hidden" name="_next" value="https://pulsohq-web.vercel.app/?sent=true">
+        <input type="text" name="_honey" style="display:none">
         <div class="form-group">
           <label for="name">Nombre</label>
           <input type="text" id="name" name="name" placeholder="Tu nombre" required autocomplete="name">
@@ -548,9 +552,9 @@
         </div>
         <div class="form-group">
           <label for="mensaje">¿Qué quieres automatizar?</label>
-          <textarea id="mensaje" name="mensaje" rows="4" placeholder="Cuéntanos sobre tu negocio y qué procesos te gustaría automatizar..." required></textarea>
+          <textarea id="mensaje" name="message" rows="4" placeholder="Cuéntanos sobre tu negocio y qué procesos te gustaría automatizar..." required></textarea>
         </div>
-        <button type="submit" class="btn btn-primary btn-block btn-lg">
+        <button type="submit" class="btn btn-primary btn-lg">
           Enviar mensaje
           <svg width="18" height="18" viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M4 10h12m0 0l-5-5m5 5l-5 5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
         </button>
