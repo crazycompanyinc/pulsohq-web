@@ -1,0 +1,579 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PulsoHQ — Agentes de IA que trabajan 24/7 por tu empresa</title>
+<meta name="description" content="Automatización multi-agente de IA para empresas. Agentes especializados trabajando 24/7 como un departamento virtual. Resultados en 48 horas.">
+<meta name="keywords" content="automatización IA, agentes IA, automatización empresarial, multi-agente IA, productividad, eficiencia operativa">
+<meta property="og:title" content="PulsoHQ — Automatiza todo. Controla nada.">
+<meta property="og:description" content="Sistemas de automatización multi-agente de IA. Tu equipo virtual de agentes especialistas trabajando 24/7. Resultados en 48 horas.">
+<meta property="og:type" content="website">
+<meta property="og:image" content="https://pulsohq-web.vercel.app/assets/img/og-image.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#060A14">
+<meta name="robots" content="index, follow">
+<link rel="canonical" href="https://pulsohq-web.vercel.app">
+<link rel="icon" type="image/svg+xml" href="/assets/img/logo.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="preconnect" href="https://buy.stripe.com">
+<link rel="preload" href="css/style.css" as="style">
+<link rel="preload" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&display=swap" as="style" onload="this.onload=null;this.rel='stylesheet'">
+<noscript><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet"></noscript>
+<link rel="stylesheet" href="css/style.css">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Organization",
+  "name": "PulsoHQ",
+  "url": "https://pulsohq-web.vercel.app",
+  "logo": "https://pulsohq-web.vercel.app/assets/img/logo.svg",
+  "description": "Sistemas de automatización multi-agente de IA para empresas. Agentes especializados que trabajan en equipo como un departamento virtual.",
+  "sameAs": [
+    "https://twitter.com/pulsohq",
+    "https://linkedin.com/company/pulsohq",
+    "https://github.com/crazycompanyinc"
+  ],
+  "contactPoint": {
+    "@type": "ContactPoint",
+    "email": "crazycompanyincmail@gmail.com",
+    "contactType": "sales"
+  }
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "WebSite",
+  "name": "PulsoHQ",
+  "url": "https://pulsohq-web.vercel.app",
+  "potentialAction": {
+    "@type": "SearchAction",
+    "target": "https://pulsohq-web.vercel.app/?q={search_term_string}",
+    "query-input": "required name=search_term_string"
+  }
+}
+</script>
+<script>
+// Inline checkout function - available immediately
+function goToCheckout(plan, promoCode) {
+  var planMap = {
+    starter: { monthly: 'starter_monthly', yearly: 'starter_yearly' },
+    growth: { monthly: 'growth_monthly', yearly: 'growth_yearly' }
+  };
+  var isYearly = document.getElementById('precioToggle') ? document.getElementById('precioToggle').checked : false;
+  var planKey = planMap[plan] ? planMap[plan][isYearly ? 'yearly' : 'monthly'] : plan;
+  var btn = document.getElementById(plan + '-btn');
+  var originalBtnHTML = btn ? btn.innerHTML : '';
+  if (btn) { btn.innerHTML = '<span>Cargando...</span>'; btn.style.pointerEvents = 'none'; }
+  var controller = new AbortController();
+  var timeout = setTimeout(function () { controller.abort(); }, 15000); // 15s timeout (fixes BUG-21)
+  fetch('/api/create-checkout', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ plan: planKey, promo: promoCode || '' }),
+    signal: controller.signal
+  })
+  .then(function(r) { clearTimeout(timeout); return r.json(); })
+  .then(function(data) {
+    if (data.url) { window.location.href = data.url; }
+    else { throw new Error(data.error || 'Error'); }
+  })
+  .catch(function(err) {
+    clearTimeout(timeout);
+    console.error('Checkout:', err);
+    alert(err.name === 'AbortError' ? 'La conexión tardó demasiado. Intenta de nuevo.' : 'Error al procesar el pago. Intenta de nuevo.');
+    if (btn) { btn.innerHTML = originalBtnHTML; btn.style.pointerEvents = ''; } // fixes BUG-22
+  });
+}
+</script>
+<meta property="og:locale" content="es_ES">
+<meta property="og:site_name" content="PulsoHQ">
+<meta name="format-detection" content="telephone=no">
+</head>
+<body>
+<noscript>
+  <div style="position:fixed;bottom:0;left:0;right:0;background:var(--blue);color:#fff;padding:12px;text-align:center;font-size:14px;z-index:99999;">
+    ⚡ PulsoHQ funciona mejor con JavaScript activado. Algunas características pueden no estar disponibles.
+  </div>
+</noscript>
+
+<!-- PROMO BAR -->
+<div class="promo-bar" id="promoBar" role="alert">
+  🔥 <strong>50% DESCUENTO</strong> en todos los planes — Código: <span class="promo-code">PULSO50</span> — <strong>Tiempo limitado</strong>
+  <button class="promo-close" aria-label="Cerrar" onclick="closePromo()"><span aria-hidden="true">✕</span></button>
+</div>
+
+<script>
+function closePromo(){
+  var pb = document.getElementById('promoBar');
+  if(pb) pb.classList.add('hidden');
+  document.body.classList.add('promo-closed');
+  try { sessionStorage.setItem('promoClosed','1'); } catch(e) {}
+}
+// If previously closed, hide it
+try {
+  if(sessionStorage.getItem('promoClosed')) {
+    var pb = document.getElementById('promoBar');
+    if(pb) pb.classList.add('hidden');
+    document.body.classList.add('promo-closed');
+  }
+} catch(e) {}
+</script>
+
+<!-- LOADER -->
+<div id="loader" class="loader" role="status">
+  <div class="loader-inner">
+    <div class="loader-logo">
+      <svg width="48" height="48" viewBox="0 0 48 48" fill="none" aria-hidden="true">
+        <circle cx="24" cy="12" r="4" fill="#3B82F6"/>
+        <circle cx="12" cy="30" r="4" fill="#22D3EE"/>
+        <circle cx="36" cy="30" r="4" fill="#34D399"/>
+        <circle cx="24" cy="36" r="3" fill="#8B5CF6"/>
+        <line x1="24" y1="16" x2="14" y2="27" stroke="#3B82F6" stroke-width="1.5" opacity="0.5"/>
+        <line x1="24" y1="16" x2="34" y2="27" stroke="#22D3EE" stroke-width="1.5" opacity="0.5"/>
+      </svg>
+    </div>
+    <div class="loader-bar"><div class="loader-bar-fill" id="loaderBarFill"></div></div>
+    <span class="loader-text" id="loaderText">Inicializando...</span>
+  </div>
+</div>
+
+<!-- CURSOR -->
+<div class="cursor-main" id="cursorMain" aria-hidden="true"></div>
+<div class="cursor-follower" id="cursorFollower" aria-hidden="true"></div>
+
+<!-- NAV -->
+<nav class="nav" id="nav" role="navigation" aria-label="Navegación principal">
+  <div class="nav-inner">
+    <a href="#hero" class="nav-logo" aria-label="PulsoHQ inicio">
+      <svg width="36" height="36" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg" style="flex-shrink:0">
+        <defs>
+          <linearGradient id="navLogoGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#3B82F6"/>
+            <stop offset="50%" stop-color="#22D3EE"/>
+            <stop offset="100%" stop-color="#34D399"/>
+          </linearGradient>
+        </defs>
+        <circle cx="256" cy="256" r="240" fill="#3B82F6" fill-opacity="0.08"/>
+        <circle cx="256" cy="256" r="200" fill="none" stroke="url(#navLogoGrad)" stroke-width="2" opacity="0.4"/>
+        <circle cx="256" cy="256" r="160" fill="none" stroke="url(#navLogoGrad)" stroke-width="1" opacity="0.25"/>
+        <circle cx="256" cy="130" r="20" fill="#3B82F6" opacity="0.9"/>
+        <line x1="256" y1="150" x2="256" y2="220" stroke="#3B82F6" stroke-width="3" opacity="0.8"/>
+        <circle cx="360" cy="200" r="16" fill="#22D3EE" opacity="0.9"/>
+        <line x1="280" y1="240" x2="345" y2="210" stroke="#22D3EE" stroke-width="2.5" opacity="0.7"/>
+        <circle cx="370" cy="320" r="14" fill="#34D399" opacity="0.9"/>
+        <line x1="280" y1="280" x2="358" y2="315" stroke="#34D399" stroke-width="2" opacity="0.6"/>
+        <circle cx="256" cy="390" r="16" fill="#8B5CF6" opacity="0.9"/>
+        <line x1="256" y1="290" x2="256" y2="374" stroke="#8B5CF6" stroke-width="2.5" opacity="0.7"/>
+        <circle cx="150" cy="320" r="14" fill="#22D3EE" opacity="0.9"/>
+        <line x1="230" y1="280" x2="160" y2="310" stroke="#22D3EE" stroke-width="2" opacity="0.6"/>
+        <circle cx="150" cy="200" r="15" fill="#34D399" opacity="0.9"/>
+        <line x1="230" y1="220" x2="162" y2="205" stroke="#34D399" stroke-width="2" opacity="0.6"/>
+        <circle cx="256" cy="256" r="40" fill="#0B0F19" stroke="url(#navLogoGrad)" stroke-width="3"/>
+        <circle cx="256" cy="256" r="22" fill="url(#navLogoGrad)"/>
+        <circle cx="256" cy="256" r="8" fill="#0B0F19"/>
+      </svg>
+      <span>PulsoHQ</span>
+    </a>
+    <div class="nav-links" id="navLinks">
+      <a href="#problema" class="nav-link">Problema</a>
+      <a href="#agentes" class="nav-link">Agentes</a>
+      <a href="#como-funciona" class="nav-link">Cómo funciona</a>
+      <a href="#precios" class="nav-link">Precios</a>
+      <a href="#precios" class="nav-cta">Ver planes</a>
+    </div>
+    <button class="nav-toggle" id="navToggle" aria-label="Abrir menú" aria-expanded="false">
+      <span></span><span></span><span></span>
+    </button>
+  </div>
+</nav>
+
+<!-- HERO -->
+<section id="hero" class="hero" aria-label="Inicio">
+  <div class="hero-bg-img" aria-hidden="true"></div>
+  <canvas id="particleCanvas" class="hero-canvas" aria-hidden="true"></canvas>
+  <div class="hero-inner">
+    <div class="hero-badge">
+      <span class="badge-dot" aria-hidden="true"></span>
+      <span>+2,847 agentes activos trabajando ahora</span>
+    </div>
+    <h1 class="hero-title">
+      PulsoHQ: Tu equipo de<br>
+      <span class="gradient">agentes de IA</span><br>
+      trabajando 24/7
+    </h1>
+    <p class="hero-subtitle">
+      Automatizamos tus procesos con sistemas multi-agente que trabajan juntos como un departamento virtual. Sin código. <strong>Primeros resultados en 48 horas (piloto incluido).</strong>
+    </p>
+    <div class="hero-ctas">
+      <a href="#contacto" class="btn btn-primary btn-lg">
+        Agenda una demo gratuita
+        <svg width="18" height="18" viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M4 10h12m0 0l-5-5m5 5l-5 5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </a>
+      <a href="#como-funciona" class="btn btn-ghost btn-lg">Ver cómo funciona</a>
+    </div>
+    <div class="hero-stats">
+      <div class="stat"><span class="stat-number" data-count="2847">2,847</span><span class="stat-label">Agentes activos</span></div>
+      <div class="stat"><span class="stat-number" data-count="156">156</span><span class="stat-label">Empresas</span></div>
+      <div class="stat"><span class="stat-number" data-count="42">42</span><span class="stat-label">Horas ahorradas/día</span></div>
+      <div class="stat"><span class="stat-number" data-count="98">98%</span><span class="stat-label">Satisfacción</span></div>
+    </div>
+  </div>
+  <div class="hero-scroll">
+    <a href="#problema" class="scroll-indicator" aria-label="Scroll abajo">
+      <div class="scroll-mouse"><div class="scroll-wheel"></div></div>
+      <span>Scroll</span>
+    </a>
+  </div>
+</section>
+
+<!-- PROBLEMA -->
+<section id="problema" class="section problema" aria-labelledby="problema-title" data-reveal>
+  <div class="container">
+    <div class="section-header" data-reveal>
+      <span class="section-tag">El problema</span>
+      <h2 id="problema-title">Tu equipo pierde<br><span class="gradient-text">miles de horas</span> en tareas repetitivas</h2>
+      <p>Mientras tus mejores personas trabajan como máquinas, el crecimiento se estanca. Cada hora en tareas manuales es una hora robada a la innovación.</p>
+    </div>
+    <div class="problema-grid" data-stagger>
+      <div class="problema-card">
+        <div class="problema-icon" aria-hidden="true"><svg width="32" height="32" viewBox="0 0 40 40" fill="none"><circle cx="20" cy="20" r="14" stroke="#F97316" stroke-width="2" opacity="0.3"/><path d="M14 20h12M20 14v12" stroke="#F97316" stroke-width="2" stroke-linecap="round"/></svg></div>
+        <h3>30-60%</h3>
+        <p>del tiempo productivo se pierde en tareas manuales que un agente de IA puede hacerlas en segundos.</p>
+      </div>
+      <div class="problema-card">
+        <div class="problema-icon" aria-hidden="true"><svg width="32" height="32" viewBox="0 0 40 40" fill="none"><circle cx="20" cy="20" r="14" stroke="#F97316" stroke-width="2" opacity="0.3"/><path d="M16 16l8 8m0-8l-8 8" stroke="#F97316" stroke-width="2" stroke-linecap="round"/></svg></div>
+        <h3>$47,000</h3>
+        <p>costo anual promedio por empleado en tiempo desperdiciado. Multiplica eso por cada persona de tu equipo.</p>
+      </div>
+      <div class="problema-card">
+        <div class="problema-icon" aria-hidden="true"><svg width="32" height="32" viewBox="0 0 40 40" fill="none"><circle cx="20" cy="20" r="14" stroke="#F97316" stroke-width="2" opacity="0.3"/><circle cx="20" cy="20" r="4" fill="#F97316" opacity="0.4"/></svg></div>
+        <h3>Fundadores atrapados</h3>
+        <p>CEOs y founders pasan el 40% de su tiempo en operaciones en lugar de estrategia.</p>
+      </div>
+      <div class="problema-card">
+        <div class="problema-icon" aria-hidden="true"><svg width="32" height="32" viewBox="0 0 40 40" fill="none"><circle cx="20" cy="20" r="14" stroke="#F97316" stroke-width="2" opacity="0.3"/><path d="M14 22l4-4 4 4 6-6" stroke="#F97316" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <h3>Sin escalabilidad</h3>
+        <p>Cada nuevo cliente = más trabajo manual. El crecimiento se convierte en tu enemigo.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- AGENTES -->
+<section id="agentes" class="section agentes" aria-labelledby="agentes-title" data-reveal>
+  <div class="container">
+    <div class="section-header" data-reveal>
+      <span class="section-tag">La solución</span>
+      <h2 id="agentes-title">Un <span class="gradient-text">equipo de agentes</span> especializados que trabajan juntos</h2>
+      <p>No es un bot. Es un sistema completo de agentes de IA que cooperan como un departamento virtual.</p>
+    </div>
+    <div class="agentes-grid" data-stagger>
+      <div class="agente-card">
+        <div class="agente-avatar" style="background:rgba(59,130,246,0.1);border:1px solid rgba(59,130,246,0.2)" aria-hidden="true"><svg width="24" height="24" viewBox="0 0 28 28" fill="none"><path d="M4 7a3 3 0 013-3h14a3 3 0 013 3v14a3 3 0 01-3 3H7a3 3 0 01-3-3V7z" stroke="#3B82F6" stroke-width="1.5"/><path d="M4 11h20M11 11v12" stroke="#3B82F6" stroke-width="1.5" opacity="0.5"/></svg></div>
+        <h3>Agente de Datos</h3>
+        <p>Extrae datos de CRMs, hojas de cálculo, APIs y bases de datos. Genera dashboards automáticos.</p>
+        <div class="agente-status"><span class="status-dot"></span>Activo</div>
+      </div>
+      <div class="agente-card">
+        <div class="agente-avatar" style="background:rgba(34,211,238,0.1);border:1px solid rgba(34,211,238,0.2)" aria-hidden="true"><svg width="24" height="24" viewBox="0 0 28 28" fill="none"><path d="M5 7a2 2 0 012-2h14a2 2 0 012 2v10a2 2 0 01-2 2H11l-4 4V7z" stroke="#22D3EE" stroke-width="1.5"/><path d="M9 11h6M9 15h10" stroke="#22D3EE" stroke-width="1.5" opacity="0.5" stroke-linecap="round"/></svg></div>
+        <h3>Agente de Comunicación</h3>
+        <p>Responde emails, gestiona Slack, coordina equipos y actualiza clientes.</p>
+        <div class="agente-status"><span class="status-dot"></span>Activo</div>
+      </div>
+      <div class="agente-card">
+        <div class="agente-avatar" style="background:rgba(52,211,153,0.1);border:1px solid rgba(52,211,153,0.2)" aria-hidden="true"><svg width="24" height="24" viewBox="0 0 28 28" fill="none"><path d="M5 21V7M10 21V11M15 21V14M20 21V5" stroke="#34D399" stroke-width="2" stroke-linecap="round"/></svg></div>
+        <h3>Agente de Análisis</h3>
+        <p>Genera reportes, identifica patrones y produce insights accionables.</p>
+        <div class="agente-status"><span class="status-dot"></span>Activo</div>
+      </div>
+      <div class="agente-card">
+        <div class="agente-avatar" style="background:rgba(139,92,246,0.1);border:1px solid rgba(139,92,246,0.2)" aria-hidden="true"><svg width="24" height="24" viewBox="0 0 28 28" fill="none"><rect x="4" y="4" width="20" height="20" rx="3" stroke="#8B5CF6" stroke-width="1.5"/><path d="M9 10h10M9 14h7M9 18h4" stroke="#8B5CF6" stroke-width="1.5" opacity="0.5" stroke-linecap="round"/></svg></div>
+        <h3>Agente de Contenido</h3>
+        <p>Crea, programa y optimiza contenido para múltiples canales.</p>
+        <div class="agente-status"><span class="status-dot"></span>Activo</div>
+      </div>
+      <div class="agente-card">
+        <div class="agente-avatar" style="background:rgba(249,115,22,0.1);border:1px solid rgba(249,115,22,0.2)" aria-hidden="true"><svg width="24" height="24" viewBox="0 0 28 28" fill="none"><circle cx="14" cy="14" r="10" stroke="#F97316" stroke-width="1.5"/><path d="M10 14c0-2.2 1.8-4 4-4s4 1.8 4 4-1.8 4-4 4" stroke="#F97316" stroke-width="1.5"/><path d="M14 10v-2" stroke="#F97316" stroke-width="1.5" stroke-linecap="round"/></svg></div>
+        <h3>Agente de Soporte</h3>
+        <p>Atiende clientes 24/7, resuelve incidencias y escala casos complejos.</p>
+        <div class="agente-status"><span class="status-dot"></span>Activo</div>
+      </div>
+      <div class="agente-card">
+        <div class="agente-avatar" style="background:rgba(59,130,246,0.1);border:1px solid rgba(59,130,246,0.2)" aria-hidden="true"><svg width="24" height="24" viewBox="0 0 28 28" fill="none"><path d="M5 14l4-4 5 5 9-9" stroke="#3B82F6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M18 5h5v5" stroke="#3B82F6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <h3>Agente de Ventas</h3>
+        <p>Qualifica leads, nutre prospectos y agenda reuniones automáticamente.</p>
+        <div class="agente-status"><span class="status-dot"></span>Activo</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- COMO FUNCIONA -->
+<section id="como-funciona" class="section como-funciona" aria-labelledby="proceso-title" data-reveal>
+  <div class="container">
+    <div class="section-header" data-reveal>
+      <span class="section-tag">Proceso</span>
+      <h2 id="proceso-title">De caos a automatización<br><span class="gradient-text">en 3 pasos</span></h2>
+      <p>Simple, rápido y sin complicaciones. Tú describes el problema, nosotros lo resolvemos.</p>
+    </div>
+    <div class="pasos" data-stagger>
+      <div class="paso">
+        <div class="paso-number" aria-hidden="true">01</div>
+        <div class="paso-content"><h3>Analizamos tus procesos</h3><p>Identificamos tareas repetitivas, cuellos de botella y oportunidades de automatización. Sin costo ni compromiso.</p></div>
+      </div>
+      <div class="paso-line"></div>
+      <div class="paso">
+        <div class="paso-number" aria-hidden="true">02</div>
+        <div class="paso-content"><h3>Diseñamos el sistema de agentes</h3><p>Creamos agentes especializados para cada tarea y los integramos con tus herramientas existentes.</p></div>
+      </div>
+      <div class="paso-line"></div>
+      <div class="paso">
+        <div class="paso-number" aria-hidden="true">03</div>
+        <div class="paso-content"><h3>Desplegamos y optimizamos</h3><p>Lanzamos los agentes a producción. Primeros resultados en 48-72 horas.</p></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- SERVICIOS -->
+<section id="servicios" class="section servicios" aria-labelledby="servicios-title" data-reveal>
+  <div class="container">
+    <div class="section-header" data-reveal>
+      <span class="section-tag">Servicios</span>
+      <h2 id="servicios-title">Automatización a <span class="gradient-text">tu medida</span></h2>
+      <p>Desde una sola tarea hasta la transformación completa de tus operaciones.</p>
+    </div>
+    <div class="servicios-grid" data-stagger>
+      <div class="servicio-card">
+        <div class="servicio-icon" aria-hidden="true"><svg width="24" height="24" viewBox="0 0 32 32" fill="none"><path d="M6 8h20M6 16h20M6 24h12" stroke="#3B82F6" stroke-width="2" stroke-linecap="round"/></svg></div>
+        <h3>Automatización de Procesos</h3>
+        <p>Flujos de trabajo completos automatizados de principio a fin.</p>
+        <ul><li>Flujos de aprobación automáticos</li><li>Gestión documental inteligente</li><li>Onboarding de clientes</li></ul>
+      </div>
+      <div class="servicio-card">
+        <div class="servicio-icon" aria-hidden="true"><svg width="24" height="24" viewBox="0 0 32 32" fill="none"><circle cx="16" cy="16" r="10" stroke="#22D3EE" stroke-width="2"/><path d="M10 16h12M16 10v12" stroke="#22D3EE" stroke-width="2"/></svg></div>
+        <h3>Integración de Sistemas</h3>
+        <p>Conectamos todas tus herramientas para que trabajen juntas.</p>
+        <ul><li>CRM + Email + Calendar</li><li>Slack + Notion + Drive</li><li>APIs personalizadas</li></ul>
+      </div>
+      <div class="servicio-card">
+        <div class="servicio-icon" aria-hidden="true"><svg width="24" height="24" viewBox="0 0 32 32" fill="none"><path d="M16 6l4 8 8 2-6 6 2 8-8-4-8 4 2-8-6-6 8-2z" stroke="#34D399" stroke-width="2" stroke-linejoin="round"/></svg></div>
+        <h3>Agentes Personalizados</h3>
+        <p>Agentes de IA a medida para las necesidades de tu negocio.</p>
+        <ul><li>Agentes de atención al cliente</li><li>Agentes de análisis financiero</li><li>Agentes de RRHH</li></ul>
+      </div>
+      <div class="servicio-card">
+        <div class="servicio-icon" aria-hidden="true"><svg width="24" height="24" viewBox="0 0 32 32" fill="none"><path d="M8 24V8M16 24V12M24 24V16" stroke="#8B5CF6" stroke-width="2" stroke-linecap="round"/></svg></div>
+        <h3>Consultoría de Automatización</h3>
+        <p>Auditoría completa y roadmap priorizado por impacto y ROI.</p>
+        <ul><li>Auditoría de procesos</li><li>ROI projection</li><li>Plan de implementación</li></ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CASOS -->
+<section id="casos" class="section casos" aria-labelledby="casos-title" data-reveal>
+  <div class="container">
+    <div class="section-header" data-reveal>
+      <span class="section-tag">Casos de éxito</span>
+      <h2 id="casos-title">Resultados <span class="gradient-text">reales</span></h2>
+      <p>Empresas como la tuya ya están ahorrando cientos de horas.</p>
+    </div>
+    <div class="casos-grid" data-stagger>
+      <div class="caso-card">
+        <div class="caso-header"><span class="caso-tag">E-commerce</span><span class="caso-metric">+340%</span></div>
+        <h3>Atención al cliente automatizada</h3>
+        <p>Un e-commerce redujo el tiempo de respuesta de 24h a 2 minutos. 87% de consultas resueltas sin humano.</p>
+        <div class="caso-stats"><div><strong>45h</strong><span>ahorradas/semana</span></div><div><strong>87%</strong><span>sin humano</span></div><div><strong>4.8★</strong><span>satisfacción</span></div></div>
+      </div>
+      <div class="caso-card">
+        <div class="caso-header"><span class="caso-tag">SaaS B2B</span><span class="caso-metric">-72%</span></div>
+        <h3>Qualificación de leads automática</h3>
+        <p>Una startup SaaS automatizó su pipeline. Los agentes cualifican, nutren y agendan reuniones.</p>
+        <div class="caso-stats"><div><strong>3x</strong><span>más reuniones</span></div><div><strong>72%</strong><span>menos tiempo</span></div><div><strong>+180%</strong><span>pipeline</span></div></div>
+      </div>
+      <div class="caso-card">
+        <div class="caso-header"><span class="caso-tag">Agencia</span><span class="caso-metric">+200%</span></div>
+        <h3>Reportes y contenido automatizado</h3>
+        <p>Una agencia multiplicó su capacidad de entrega. Reportes, contenido y publicaciones automáticas.</p>
+        <div class="caso-stats"><div><strong>200%</strong><span>más clientes</span></div><div><strong>30h</strong><span>ahorradas/semana</span></div><div><strong>0</strong><span>errores</span></div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- TESTIMONIOS -->
+<section id="testimonios" class="section testimonios" aria-labelledby="testimonios-title" data-reveal>
+  <div class="container">
+    <div class="section-header" data-reveal>
+      <span class="section-tag">Testimonios</span>
+      <h2 id="testimonios-title">Lo que dicen <span class="gradient-text">nuestros clientes</span></h2>
+    </div>
+    <div class="testimonios-grid" data-stagger>
+      <div class="testimonio-card">
+        <div class="testimonio-stars" aria-label="5 estrellas">★★★★★</div>
+        <blockquote>"Pasamos de perder 30 horas semanales en emails y reportes a tener todo automatizado. Nuestro equipo ahora se enfoca en crecer."</blockquote>
+        <div class="testimonio-author"><div class="author-avatar" aria-hidden="true">MC</div><div><strong>María Cristina López</strong><span>COO, TechScale</span></div></div>
+      </div>
+      <div class="testimonio-card">
+        <div class="testimonio-stars" aria-label="5 estrellas">★★★★★</div>
+        <blockquote>"En 2 semanas teníamos 4 agentes trabajando. El ROI fue inmediato. No podemos imaginar volver al proceso manual."</blockquote>
+        <div class="testimonio-author"><div class="author-avatar" aria-hidden="true">AR</div><div><strong>Andrés Rodríguez</strong><span>Founder, DataFlow</span></div></div>
+      </div>
+      <div class="testimonio-card">
+        <div class="testimonio-stars" aria-label="5 estrellas">★★★★★</div>
+        <blockquote>"Se integró con todas nuestras herramientas existentes. No tuvimos que cambiar nada. Los agentes simplemente empezaron a trabajar."</blockquote>
+        <div class="testimonio-author"><div class="author-avatar" aria-hidden="true">SP</div><div><strong>Sofía Pérez</strong><span>Head de Ops, GrowthLab</span></div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- PRECIOS -->
+<section id="precios" class="section precios" aria-labelledby="precios-title" data-reveal>
+  <div class="container">
+    <div class="section-header" data-reveal>
+      <span class="section-tag">Precios</span>
+      <h2 id="precios-title">Planes que <span class="gradient-text">crecen contigo</span></h2>
+      <p>Empieza hoy. Sin contratos. Garantía de devolución 30 días.</p>
+    </div>
+    <div class="precios-toggle" data-reveal>
+      <span class="toggle-label active" data-period="monthly" role="button" tabindex="0">Mensual</span>
+      <label class="toggle"><input type="checkbox" id="precioToggle" aria-label="Cambiar entre precio mensual y anual"><span class="toggle-slider"></span></label>
+      <span class="toggle-label" data-period="yearly" role="button" tabindex="0">Anual <span class="toggle-save">-20%</span></span>
+    </div>
+    <div class="precios-grid" data-stagger>
+      <div class="precio-card">
+        <div class="precio-header"><h3>Starter</h3><p>Para emprendedores</p></div>
+        <div class="precio-amount"><span class="precio-currency">€</span><span class="precio-number" data-monthly="29" data-yearly="23">29</span><span class="precio-period"><span class="period-text">/mes</span></span></div>
+        <ul class="precio-features">
+          <li><svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M3 8l3.5 3.5L13 5" stroke="#34D399" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>2 agentes especializados</li>
+          <li><svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M3 8l3.5 3.5L13 5" stroke="#34D399" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>5 automatizaciones</li>
+          <li><svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M3 8l3.5 3.5L13 5" stroke="#34D399" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>Integraciones básicas</li>
+          <li><svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M3 8l3.5 3.5L13 5" stroke="#34D399" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>Soporte por email</li>
+          <li class="disabled"><svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M4 4l8 8m0-8l-8 8" stroke="#4B5563" stroke-width="2" stroke-linecap="round"/></svg>API access</li>
+          <li class="disabled"><svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M4 4l8 8m0-8l-8 8" stroke="#4B5563" stroke-width="2" stroke-linecap="round"/></svg>White-label</li>
+        </ul>
+        <button class="btn btn-ghost btn-block" id="starter-btn" onclick="goToCheckout('starter')">Empezar ahora</button>
+      </div>
+      <div class="precio-card featured">
+        <div class="precio-popular">Más popular</div>
+        <div class="precio-header"><h3>Growth</h3><p>Para startups en crecimiento</p></div>
+        <div class="precio-amount"><span class="precio-currency">€</span><span class="precio-number" data-monthly="79" data-yearly="63">79</span><span class="precio-period"><span class="period-text">/mes</span></span></div>
+        <ul class="precio-features">
+          <li><svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M3 8l3.5 3.5L13 5" stroke="#34D399" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>6 agentes especializados</li>
+          <li><svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M3 8l3.5 3.5L13 5" stroke="#34D399" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>Automatizaciones ilimitadas</li>
+          <li><svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M3 8l3.5 3.5L13 5" stroke="#34D399" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>Todas las integraciones</li>
+          <li><svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M3 8l3.5 3.5L13 5" stroke="#34D399" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>Soporte prioritario</li>
+          <li><svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M3 8l3.5 3.5L13 5" stroke="#34D399" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>API access</li>
+          <li class="disabled"><svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M4 4l8 8m0-8l-8 8" stroke="#4B5563" stroke-width="2" stroke-linecap="round"/></svg>White-label</li>
+        </ul>
+        <button class="btn btn-primary btn-block" id="growth-btn" onclick="goToCheckout('growth')">Empezar ahora</button>
+      </div>
+      <div class="precio-card">
+        <div class="precio-header"><h3>Enterprise</h3><p>Para empresas que escalan</p></div>
+        <div class="precio-amount"><span class="precio-number">Custom</span><span class="precio-period">/mes</span></div>
+        <ul class="precio-features">
+          <li><svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M3 8l3.5 3.5L13 5" stroke="#34D399" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>Agentes ilimitados</li>
+          <li><svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M3 8l3.5 3.5L13 5" stroke="#34D399" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>Procesos complejos</li>
+          <li><svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M3 8l3.5 3.5L13 5" stroke="#34D399" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>Integraciones custom</li>
+          <li><svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M3 8l3.5 3.5L13 5" stroke="#34D399" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>Account manager dedicado</li>
+          <li><svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M3 8l3.5 3.5L13 5" stroke="#34D399" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>API access</li>
+          <li><svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M3 8l3.5 3.5L13 5" stroke="#34D399" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>White-label</li>
+        </ul>
+        <a href="#contacto" class="btn btn-ghost btn-block">Contactar</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FAQ -->
+<section id="faq" class="section faq" aria-labelledby="faq-title" data-reveal>
+  <div class="container">
+    <div class="section-header" data-reveal><span class="section-tag">FAQ</span><h2 id="faq-title">Preguntas <span class="gradient-text">frecuentes</span></h2></div>
+    <div class="faq-list" data-stagger>
+      <details class="faq-item"><summary>¿Necesito conocimientos técnicos?<span class="faq-icon" aria-hidden="true">+</span></summary><p>No. Nosotros nos encargamos de todo el setup. Tú solo describes qué quieres automatizar.</p></details>
+      <details class="faq-item"><summary>¿Cuánto tiempo toma implementar?<span class="faq-icon" aria-hidden="true">+</span></summary><p>Primeras automatizaciones en 48-72 horas. Sistema completo en 1-2 semanas.</p></details>
+      <details class="faq-item"><summary>¿Qué herramientas se integran?<span class="faq-icon" aria-hidden="true">+</span></summary><p>Slack, Notion, Google Workspace, HubSpot, Salesforce, Mailchimp, Airtable, Trello, GitHub, APIs REST y más.</p></details>
+      <details class="faq-item"><summary>¿Los agentes cometen errores?<span class="faq-icon" aria-hidden="true">+</span></summary><p>Configuramos mecanismos de control de calidad. Los agentes escalan a un humano cuando detectan algo fuera de lo normal.</p></details>
+      <details class="faq-item"><summary>¿Qué necesito tener listo para empezar?<span class="faq-icon" aria-hidden="true">+</span></summary><p>Solo acceso a las herramientas que quieres automatizar y una descripción de los procesos. Nosotros hacemos el resto.</p></details>
+      <details class="faq-item"><summary>¿Los agentes aprenden de mi negocio?<span class="faq-icon" aria-hidden="true">+</span></summary><p>Sí. Configuramos cada agente con el contexto de tu empresa, tus flujos de trabajo y tus preferencias. Cuanto más los usan, mejor funcionan.</p></details>
+      <details class="faq-item"><summary>¿Qué NO pueden hacer los agentes?<span class="faq-icon" aria-hidden="true">+</span></summary><p>No reemplazan decisiones estratégicas ni creatividad humana. Están diseñados para tareas repetitivas y basadas en reglas. Para casos ambiguos, escalan a un humano.</p></details>
+      <details class="faq-item"><summary>¿Puedo cancelar en cualquier momento?<span class="faq-icon" aria-hidden="true">+</span></summary><p>Sin penalizaciones. Si en 30 días no estás satisfecho, devolvemos el 100%.</p></details>
+      <details class="faq-item"><summary>¿Qué pasa con mis datos?<span class="faq-icon" aria-hidden="true">+</span></summary><p>Tus datos son tuyos. Cumplimos GDPR. No compartimos con terceros.</p></details>
+    </div>
+  </div>
+</section>
+
+<!-- CONTACTO -->
+<section id="contacto" class="section contacto" aria-labelledby="contacto-title" data-reveal>
+  <div class="container">
+    <div class="contacto-inner">
+      <div class="contacto-content">
+        <h2 id="contacto-title">¿Listo para <span class="gradient-text">automatizar</span>?</h2>
+        <p>Cuéntanos sobre tu negocio y te mostramos exactamente cómo nuestros agentes pueden transformar tus operaciones.</p>
+        <div class="contacto-features">
+          <div><svg width="18" height="18" viewBox="0 0 20 20" fill="none"><path d="M4 10l4 4L16 6" stroke="#34D399" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>Auditoría gratuita de procesos</div>
+          <div><svg width="18" height="18" viewBox="0 0 20 20" fill="none"><path d="M4 10l4 4L16 6" stroke="#34D399" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>Respuesta en menos de 24h</div>
+          <div><svg width="18" height="18" viewBox="0 0 20 20" fill="none"><path d="M4 10l4 4L16 6" stroke="#34D399" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>Sin contratos ni permanencia</div>
+        </div>
+      </div>
+      <form class="contacto-form" id="contactForm" novalidate>
+        <!-- Honeypot anti-spam -->
+        <div style="position:absolute;left:-9999px;opacity:0" aria-hidden="true"><input type="text" name="website" tabindex="-1" autocomplete="off"></div>
+        <div class="form-group"><label for="name">Nombre</label><input type="text" id="name" name="name" placeholder="Tu nombre" required autocomplete="name"></div>
+        <div class="form-group"><label for="email">Email</label><input type="email" id="email" name="email" placeholder="tu@email.com" required autocomplete="email"></div>
+        <div class="form-group"><label for="empresa">Empresa</label><input type="text" id="empresa" name="empresa" placeholder="Nombre de tu empresa" autocomplete="organization"></div>
+        <div class="form-group"><label for="mensaje">¿Qué quieres automatizar?</label><textarea id="mensaje" name="message" rows="4" placeholder="Cuéntanos sobre tu negocio y qué procesos te gustaría automatizar..." required></textarea></div>
+        <button type="submit" class="btn btn-primary btn-lg" id="submitBtn">Enviar mensaje</button>
+        <p id="formStatus" style="margin-top:12px;font-size:13px;display:none;"></p>
+      </form>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer class="footer" role="contentinfo">
+  <div class="container">
+    <div class="footer-grid">
+      <div class="footer-brand">
+        <a href="#hero" class="nav-logo" aria-label="PulsoHQ">
+          <svg width="28" height="28" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg" style="flex-shrink:0">
+            <defs>
+              <linearGradient id="footerLogoGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="#3B82F6"/>
+                <stop offset="50%" stop-color="#22D3EE"/>
+                <stop offset="100%" stop-color="#34D399"/>
+              </linearGradient>
+            </defs>
+            <circle cx="256" cy="256" r="240" fill="#3B82F6" fill-opacity="0.08"/>
+            <circle cx="256" cy="256" r="200" fill="none" stroke="url(#footerLogoGrad)" stroke-width="2" opacity="0.4"/>
+            <circle cx="256" cy="130" r="20" fill="#3B82F6" opacity="0.9"/>
+            <circle cx="360" cy="200" r="16" fill="#22D3EE" opacity="0.9"/>
+            <circle cx="370" cy="320" r="14" fill="#34D399" opacity="0.9"/>
+            <circle cx="256" cy="390" r="16" fill="#8B5CF6" opacity="0.9"/>
+            <circle cx="150" cy="320" r="14" fill="#22D3EE" opacity="0.9"/>
+            <circle cx="150" cy="200" r="15" fill="#34D399" opacity="0.9"/>
+            <circle cx="256" cy="256" r="40" fill="#0B0F19" stroke="url(#footerLogoGrad)" stroke-width="3"/>
+            <circle cx="256" cy="256" r="22" fill="url(#footerLogoGrad)"/>
+            <circle cx="256" cy="256" r="8" fill="#0B0F19"/>
+          </svg>
+          <span>PulsoHQ</span>
+        </a>
+        <p>Automatización multi-agente de IA para empresas que quieren crecer sin límites.</p>
+      </div>
+      <div class="footer-links"><h4>Producto</h4><a href="#agentes">Agentes</a><a href="#servicios">Servicios</a><a href="#precios">Precios</a><a href="#casos">Casos de uso</a></div>
+      <div class="footer-links"><h4>Empresa</h4><a href="#como-funciona">Cómo funciona</a><a href="#testimonios">Testimonios</a><a href="#faq">FAQ</a><a href="#contacto">Contacto</a></div>
+      <div class="footer-links"><h4>Legal</h4><a href="#">Política de Privacidad</a><a href="#">Términos de Servicio</a><a href="#">Política de Cookies</a></div>
+    </div>
+    <div class="footer-bottom"><span>© 2026 PulsoHQ. Todos los derechos reservados.</span><div class="footer-socials"><a href="#" aria-label="Twitter / X" rel="noopener"><svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor"><path d="M15.17 2H18l-6.82 7.83L19 18h-5.5l-4.1-5.33L4.5 18H2l7.18-8.27L2 2h5.5l3.7 4.83L15.17 2z"/></svg></a><a href="#" aria-label="LinkedIn" rel="noopener"><svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor"><path d="M4 3.5A1.5 1.5 0 113 5 1.5 1.5 0 014 3.5zM3 7h3v10H3V7zm5 0h3v1.5c.5-1 2-1.8 3.5-1.8 3.5 0 4.2 2.3 4.2 5.3V17h-3v-4.5c0-1.5-.5-2.5-1.8-2.5-1.5 0-2 1-2 2.5V17h-3V7z"/></svg></a><a href="#" aria-label="GitHub" rel="noopener"><svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor"><path d="M10 2a8 8 0 00-2.53 15.59c.4.07.55-.17.55-.38v-1.33C5.73 16.4 5.14 15 5.14 15A2.7 2.7 0 004 13.6c-.91-.62.07-.6.07-.6a2.2 2.2 0 011.63 1.1 2.25 2.25 0 003.1.9 2.25 2.25 0 01.68-1.4c-2.22-.25-4.55-1.11-4.55-4.94a3.87 3.87 0 011.03-2.68 3.6 3.6 0 01.1-2.65s.84-.27 2.75 1.02a9.46 9.46 0 015 0c1.91-1.3 2.75-1.02 2.75-1.02a3.6 3.6 0 01.1 2.65 3.87 3.87 0 011.03 2.68c0 3.84-2.34 4.68-4.57 4.93a2.5 2.5 0 01.7 1.95V17c0 .21.15.46.55.38A8 8 0 0010 2z"/></svg></a></div></div>
+  </div>
+</footer>
+
+<script src="js/main.js"></script>
+</body>
+</html>
