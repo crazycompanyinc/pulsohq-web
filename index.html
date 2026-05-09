@@ -57,7 +57,59 @@
 </script>
 <script>
 // Inline checkout function - available immediately
-function goToCheckout(plan, promoCode) {
+// Email capture modal before checkout
+function showEmailModal(plan, promoCode) {
+  // Remove existing modal if any
+  var existing = document.getElementById('emailCheckoutModal');
+  if (existing) existing.remove();
+
+  var overlay = document.createElement('div');
+  overlay.id = 'emailCheckoutModal';
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:99999;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(8px);';
+  overlay.innerHTML = '<div style="background:#141420;border:1px solid #2a2a3a;border-radius:16px;padding:32px;max-width:420px;width:90%;text-align:center;">' +
+    '<h3 style="font-size:20px;font-weight:700;margin-bottom:8px;color:#e4e4e7;">Último paso</h3>' +
+    '<p style="color:#8888a0;font-size:14px;margin-bottom:20px;">Introduce tu email para continuar con la suscripción</p>' +
+    '<input type="email" id="checkoutEmail" placeholder="tu@email.com" style="width:100%;padding:12px 16px;border:1px solid #2a2a3a;border-radius:8px;background:#0a0a0f;color:#e4e4e7;font-size:15px;outline:none;margin-bottom:16px;" autofocus>' +
+    '<div style="display:flex;gap:12px;">' +
+    '<button id="emailModalCancel" style="flex:1;padding:12px;border:1px solid #2a2a3a;border-radius:8px;background:transparent;color:#8888a0;font-size:14px;cursor:pointer;">Cancelar</button>' +
+    '<button id="emailModalSubmit" style="flex:2;padding:12px;border:none;border-radius:8px;background:linear-gradient(135deg,#6366f1,#a855f7);color:#fff;font-size:14px;font-weight:600;cursor:pointer;">Continuar</button>' +
+    '</div></div>';
+
+  document.body.appendChild(overlay);
+  document.body.style.overflow = 'hidden';
+
+  setTimeout(function() { document.getElementById('checkoutEmail').focus(); }, 100);
+
+  document.getElementById('emailModalCancel').addEventListener('click', function() {
+    overlay.remove();
+    document.body.style.overflow = '';
+  });
+
+  overlay.addEventListener('click', function(e) {
+    if (e.target === overlay) { overlay.remove(); document.body.style.overflow = ''; }
+  });
+
+  document.getElementById('emailModalSubmit').addEventListener('click', function() {
+    var email = document.getElementById('checkoutEmail').value.trim();
+    var emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      var input = document.getElementById('checkoutEmail');
+      input.style.borderColor = '#F97316';
+      input.setAttribute('placeholder', 'Email inválido');
+      return;
+    }
+    overlay.remove();
+    document.body.style.overflow = '';
+    goToCheckout(plan, promoCode, email);
+  });
+
+  document.getElementById('checkoutEmail').addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') document.getElementById('emailModalSubmit').click();
+    if (e.key === 'Escape') { overlay.remove(); document.body.style.overflow = ''; }
+  });
+}
+
+function goToCheckout(plan, promoCode, email) {
   var planMap = {
     starter: { monthly: 'starter_monthly', yearly: 'starter_yearly' },
     growth: { monthly: 'growth_monthly', yearly: 'growth_yearly' }
@@ -69,10 +121,12 @@ function goToCheckout(plan, promoCode) {
   if (btn) { btn.innerHTML = '<span>Cargando...</span>'; btn.style.pointerEvents = 'none'; }
   var controller = new AbortController();
   var timeout = setTimeout(function () { controller.abort(); }, 15000); // 15s timeout (fixes BUG-21)
+  var body = { plan: planKey, promo: promoCode || '' };
+  if (email) body.email = email;
   fetch('/api/create-checkout', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ plan: planKey, promo: promoCode || '' }),
+    body: JSON.stringify(body),
     signal: controller.signal
   })
   .then(function(r) { clearTimeout(timeout); return r.json(); })
@@ -458,7 +512,7 @@ try {
           <li class="disabled"><svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M4 4l8 8m0-8l-8 8" stroke="#4B5563" stroke-width="2" stroke-linecap="round"/></svg>API access</li>
           <li class="disabled"><svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M4 4l8 8m0-8l-8 8" stroke="#4B5563" stroke-width="2" stroke-linecap="round"/></svg>White-label</li>
         </ul>
-        <button class="btn btn-ghost btn-block" id="starter-btn" onclick="goToCheckout('starter')">Empezar ahora</button>
+        <button class="btn btn-ghost btn-block" id="starter-btn" onclick="showEmailModal('starter')">Empezar ahora</button>
       </div>
       <div class="precio-card featured">
         <div class="precio-popular">Más popular</div>
@@ -472,7 +526,7 @@ try {
           <li><svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M3 8l3.5 3.5L13 5" stroke="#34D399" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>API access</li>
           <li class="disabled"><svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M4 4l8 8m0-8l-8 8" stroke="#4B5563" stroke-width="2" stroke-linecap="round"/></svg>White-label</li>
         </ul>
-        <button class="btn btn-primary btn-block" id="growth-btn" onclick="goToCheckout('growth')">Empezar ahora</button>
+        <button class="btn btn-primary btn-block" id="growth-btn" onclick="showEmailModal('growth')">Empezar ahora</button>
       </div>
       <div class="precio-card">
         <div class="precio-header"><h3>Enterprise</h3><p>Para empresas que escalan</p></div>
