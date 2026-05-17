@@ -109,7 +109,9 @@ function showEmailModal(plan, promoCode) {
   });
 }
 
-function goToCheckout(plan, promoCode, email) {
+<script>
+// Inline checkout function - available immediately
+function goToCheckout(plan, promoCode, customerEmail) {
   var planMap = {
     starter: { monthly: 'starter_monthly', yearly: 'starter_yearly' },
     growth: { monthly: 'growth_monthly', yearly: 'growth_yearly' }
@@ -121,12 +123,17 @@ function goToCheckout(plan, promoCode, email) {
   if (btn) { btn.innerHTML = '<span>Cargando...</span>'; btn.style.pointerEvents = 'none'; }
   var controller = new AbortController();
   var timeout = setTimeout(function () { controller.abort(); }, 15000); // 15s timeout (fixes BUG-21)
-  var body = { plan: planKey, promo: promoCode || '' };
-  if (email) body.email = email;
+
+  // Use email param (from modal) or fall back to inline input
+  if (!customerEmail) {
+    var emailInput = document.getElementById('checkout-email');
+    customerEmail = emailInput ? (emailInput.value || '').trim() : '';
+  }
+
   fetch('/api/create-checkout', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(body),
+    body: JSON.stringify({ plan: planKey, promo: promoCode || '', customer_email: customerEmail }),
     signal: controller.signal
   })
   .then(function(r) { clearTimeout(timeout); return r.json(); })

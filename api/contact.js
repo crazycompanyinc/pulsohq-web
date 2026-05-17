@@ -54,7 +54,13 @@ function isValidEmail(email) {
 
 function getPassword() {
   // Use Vercel env vars exclusively (fixes S-06: no filesystem secret read)
+  // REQUIRED: Set EMAIL_PASSWORD in Vercel dashboard (Settings → Environment Variables)
   return process.env.EMAIL_PASSWORD || '';
+}
+
+// Startup-time check: warn immediately if EMAIL_PASSWORD is missing
+if (!getPassword()) {
+  console.error('[contact.js] WARNING: EMAIL_PASSWORD env var is not set — contact form submissions will fail with 503');
 }
 
 module.exports = async (req, res) => {
@@ -114,7 +120,8 @@ module.exports = async (req, res) => {
 
   const password = getPassword();
   if (!password) {
-    return res.status(500).json({ error: 'Internal server error' }); // Generic error (fixes S-05)
+    console.error('FATAL: EMAIL_PASSWORD env var is not set — contact form will not work');
+    return res.status(503).json({ error: 'Email service temporarily unavailable. Please try again later.' });
   }
 
   // Transporter with timeouts (fixes backend audit)
